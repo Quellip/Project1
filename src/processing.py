@@ -9,3 +9,6 @@ def filter_by_state(list_dicts: list, state="EXECUTED") -> list:
     return new_list_dicts
 
 
+def sort_by_date(list_dicts: list, reverse=True) -> list:
+    """Функция принимающая список словарей и сортирующая по сроку давности"""
+    return sorted(list_dicts, key=lambda d: d["date"], reverse=True)
