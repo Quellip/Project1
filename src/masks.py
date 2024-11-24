@@ -1,8 +1,8 @@
 def get_mask_card_number(card: str) -> str:
-    """Функция, которая возвращает зашифрованный вид карты пользователя """
+    """Функция, которая возвращает зашифрованный вид карты пользователя"""
     private_number = card[:6] + (len(card[6:-4]) * "*") + card[-4:]
     chunks, chunk_size = len(private_number), len(private_number) // 4
-    mask_card = " ".join([private_number[i:i + chunk_size] for i in range(0, chunks, chunk_size)])
+    mask_card = " ".join([private_number[i : i + chunk_size] for i in range(0, chunks, chunk_size)])
     return mask_card
 
 
