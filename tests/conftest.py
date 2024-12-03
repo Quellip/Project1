@@ -2,17 +2,17 @@ import pytest
 
 
 @pytest.fixture
-def card_info():
+def card_info() -> str:
     return "7000792289606361"
 
 
 @pytest.fixture
-def account_info():
+def account_info() -> str:
     return "73654108430135874305"
 
 
 @pytest.fixture
-def filter_state_info():
+def filter_state_info() -> list:
     return [
         {"id": 41428829, "state": "EXECUTED", "date": "2019-07-03T18:35:29.512364"},
         {"id": 939719570, "state": "EXECUTED", "date": "2018-06-30T02:08:58.425572"},
@@ -22,7 +22,7 @@ def filter_state_info():
 
 
 @pytest.fixture
-def sort_date_info():
+def sort_date_info() -> list:
     return [
         {"id": 41428829, "state": "EXECUTED", "date": "2019-07-03T18:35:29.512364"},
         {"id": 939719570, "state": "EXECUTED", "date": "2018-06-30T02:08:58.425572"},
@@ -32,10 +32,10 @@ def sort_date_info():
 
 
 @pytest.fixture
-def mask_account_info():
+def mask_account_info() -> str:
     return "Maestro 7000792289606361"
 
 
 @pytest.fixture
-def get_data_info():
+def get_data_info() -> str:
     return "2024-03-11T02:26:18.671407"
