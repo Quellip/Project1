@@ -8,6 +8,7 @@ file_path_1 = os.path.join(current_dir, "../logs", "utils.log")
 logger = setup_logger("utils", file_path_1)
 
 
+# noinspection PyBroadException
 def load_transactions(file_path: str) -> list[dict]:
     """Функция принимает json возвращает list или dict"""
     try:

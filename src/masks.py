@@ -10,14 +10,14 @@ logger = setup_logger("masks", file_path_1)
 
 def get_mask_card_number(card_number: str) -> str:
     """Функция принимает строку и возвращает маску карты"""
-    logger.info(f"Задаем формат маски для номера банковской карты {card_number}")
+    logger.debug(f"Задаем формат маски для номера банковской карты {card_number}")
     mask_number = f"{card_number[0:4]} {card_number[4:6]}** **** {card_number[12:]}"
     return mask_number
 
 
 def get_mask_account(acc_number: str) -> Any:
     """Функция принимает строку и возвращает маску счета"""
-    logger.info(f"Проверяем правильность написания {acc_number}")
+    logger.debug(f"Проверяем правильность написания {acc_number}")
     if len(str(acc_number)) != 20:
         logger.error("Ошибка. Проверьте длину счета. Он должен содержать 20 символов")
         raise ValueError("Проверьте номер счета. Он должен содержать 20 символов")

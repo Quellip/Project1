@@ -1,17 +1,19 @@
-import src.masks
+from src.masks import get_mask_account, get_mask_card_number
 
 
-def mask_account_card(card_name: str) -> str:
-    """Функция, возвращающая зашифрованный номер карты"""
-    card_number = card_name.split()[-1]
-    if card_name.split()[0] == "Счет":
-        mask_card = src.masks.get_mask_account(card_number)
-    else:
-        mask_card = src.masks.get_mask_card_number(card_number)
+def mask_account_card(number_str: str) -> str:
+    """Функция принимает строку и маскирует номер карты или счета"""
+    if len(number_str.split()[-1]) == 16:
+        new_number = get_mask_card_number(number_str.split()[-1])
+        result = f"{number_str[:-16]}{new_number}"
+    elif len(number_str.split()[-1]) == 20:
+        new_number = get_mask_account(number_str.split()[-1])
+        result = f"{number_str[:-20]}{new_number}"
+    return result
 
-    return mask_card
 
-
-def get_date(date: str) -> str:
-    """Функция, возвращающая дату операции"""
-    return f"{date[8:10]}.{date[5:7]}.{date[:4]}"
+def get_new_data(old_data: str) -> str:
+    """Функция принимает строку с датой и форматирует ее"""
+    data_slise = old_data[0:10].split("-")
+    result = ".".join(data_slise[::-1])
+    return result
