@@ -12,10 +12,10 @@ logger = setup_logger("utils", file_path_1)
 def load_transactions(file_path: str) -> list[dict]:
     """Функция принимает json возвращает list или dict"""
     try:
-        logger.info(f"Открытие json файла {file_path}")
+        logger.debug(f"Открытие json файла {file_path}")
         with open(file_path, "r", encoding="Windows-1251") as file:
             repos = json.load(file)
-            logger.info(f"Проверяем, что файл {file_path} не пустой")
+            logger.debug(f"Проверяем, что файл {file_path} не пустой")
         if isinstance(repos, list):
             return repos
         else:
