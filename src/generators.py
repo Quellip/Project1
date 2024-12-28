@@ -1,3 +1,5 @@
+"""Модуль генераторов для обработки массивов транзакций"""
+
 from typing import Iterable, Iterator
 
 
