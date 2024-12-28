@@ -22,6 +22,6 @@ def get_mask_account(acc_number: str) -> Any:
         logger.error("Ошибка. Проверьте длину счета. Он должен содержать 20 символов")
         raise ValueError("Проверьте номер счета. Он должен содержать 20 символов")
     else:
-        logger.info(f"Задаем формат маски для номера счета {acc_number}")
+        logger.debug(f"Задаем формат маски для номера счета {acc_number}")
         mask_bank_account = f"**{acc_number[-4::]}"
         return mask_bank_account
