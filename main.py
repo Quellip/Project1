@@ -1,133 +1,139 @@
-import os.path
+from pathlib import Path
+from typing import Any
 
-from src.decorators import log
-from src.external_api import currency_conversion
-from src.generators import card_number_generator, filter_by_currency, transaction_descriptions
-from src.processing import filter_by_state, sort_by_date
+from src.generators import filter_by_currency
+from src.processing import filter_by_state, filter_by_user_word, sort_by_date
+from src.reading_file import get_reading_csv, get_reading_exel
 from src.utils import load_transactions
 from src.widget import get_new_data, mask_account_card
 
-print(get_new_data("2024-03-11T02:26:18.671407"))
-
-print(mask_account_card("Maestro 1596837868705199"))
-
-print(mask_account_card("Счет 64686473678894779589"))
+PATH_TO_ROOT = Path(__file__).parent
+PATH_TO_DATA = Path(PATH_TO_ROOT, "data")
 
 
-print(
-    filter_by_state(
-        [
-            {"id": "41428829", "state": "EXECUTED", "date": "2019-07-03T18:35:29.512364"},
-            {"id": "939719570", "state": "EXECUTED", "date": "2018-06-30T02:08:58.425572"},
-            {"id": "594226727", "state": "CANCELED", "date": "2018-09-12T21:27:25.241689"},
-            {"id": "615064591", "state": "CANCELED", "date": "2018-10-14T08:21:33.419441"},
-        ]
+def choice_and_read(user_point: str) -> list[dict[str, Any]]:
+    """Функция принимает выбор номера операции и считывает файл,
+    соответствующий номеру операции. Так же приводит JSON файл к общему виду"""
+    if user_point == "1":
+        print("Для обработки выбран JSON-файл.")
+        json_path = Path(PATH_TO_DATA, "operations.json")
+        list_of_transactions = load_transactions(json_path)
+        formater_list = []
+        for transaction in list_of_transactions:
+            if transaction == {}:
+                continue
+            format_dict = {
+                "id": transaction["id"],
+                "state": transaction["state"],
+                "date": transaction["date"],
+                "amount": transaction["operationAmount"]["amount"],  # Извлечение из вложенного словаря
+                "currency_name": transaction["operationAmount"]["currency"]["name"],
+                "currency_code": transaction["operationAmount"]["currency"]["code"],
+                "from": transaction.get("from"),
+                "to": transaction["to"],
+                "description": transaction["description"],
+            }
+            formater_list.append(format_dict)
+        return formater_list
+    elif user_point == "2":
+        print("Для обработки выбран CSV-файл.")
+        csv_path = Path(PATH_TO_DATA, "transactions.csv")
+        return get_reading_csv(csv_path)
+    elif user_point == "3":
+        print("Для обработки выбран XLSX-файл.")
+        excel_path = Path(PATH_TO_DATA, "transactions_excel.xlsx")
+        return get_reading_exel(excel_path)
+
+
+def choice_and_filter_by_state(all_transactions: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Функция принимает список словарей и фильтрует по выбранному статусу операции"""
+    print(
+        "Введите статус, по которому необходимо выполнить фильтрацию.\n"
+        "Доступные для фильтровки статусы: EXECUTED, CANCELED, PENDING: "
     )
-)
+    while True:
+        user_status = input().upper()
+        if user_status in ["EXECUTED", "CANCELED", "PENDING"]:
+            print(f'Операции отфильтрованы по статусу "{user_status.upper()}"')
+            return filter_by_state(all_transactions, user_status)
+        else:
+            print(f'Статус операции "{user_status}" недоступен.')
 
-print(
-    sort_by_date(
-        [
-            {"id": "41428829", "state": "EXECUTED", "date": "2019-07-03T18:35:29.512364"},
-            {"id": "939719570", "state": "EXECUTED", "date": "2018-06-30T02:08:58.425572"},
-            {"id": "594226727", "state": "CANCELED", "date": "2018-09-12T21:27:25.241689"},
-            {"id": "615064591", "state": "CANCELED", "date": "2018-10-14T08:21:33.419441"},
-        ]
+
+def choice_sort_by_date(list_for_sort: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Функция сортирует по дате проведенной операции по возрастанию и убыванию,
+    в зависимости от выбора пользователя"""
+    while True:
+        sort_data = input("Отсортировать операции по дате? Да/Нет: ")
+        if sort_data.lower() == "да":
+            while True:
+                sort_by = input("Отсортировать по возрастанию или по убыванию? ")
+                if sort_by.lower() == "по возрастанию":
+                    return sort_by_date(list_for_sort, sorting_order=False)
+                elif sort_by.lower() == "по убыванию":
+                    return sort_by_date(list_for_sort)
+                else:
+                    print("Введите только значения: по возрастанию или по убыванию")
+        elif sort_data.lower() == "нет":
+            return list_for_sort
+        else:
+            print("Введите только значения: да или нет")
+
+
+def choice_and_filter_by_currency(list_for_filter: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Функция принимает список словарей и фильтрует по валюте"""
+    while True:
+        user_currency = input("Выводить только рублевые транзакции? Да/Нет: ")
+        if user_currency.lower() == "да":
+            filtered_by_rub = []
+            gen_filtered_by_rub = filter_by_currency(list_for_filter, "RUB")
+            for item in gen_filtered_by_rub:
+                filtered_by_rub.append(item)
+            print(filtered_by_rub)
+            return filtered_by_rub
+        elif user_currency.lower() == "нет":
+            print(list_for_filter)
+            return list_for_filter
+        else:
+            print("Введите только значения: да или нет")
+
+
+def choice_and_filter_by_description(list_for_filter: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Функция принимает список словарей и фильтрует по введенному пользователем слову в описании операции"""
+    input_answer = input("Отфильтровать список транзакций по определенному слову в описании? Да/Нет: ")
+    if input_answer.lower() == "да":
+        user_word = input("Введите описание операции(например: Перевод организации):")
+        return filter_by_user_word(list_for_filter, user_word)
+    else:
+        return list_for_filter
+
+
+def main() -> None:
+    """Функция отвечает за основную логику и связывает функционал между собой"""
+    print(
+        """Привет! Добро пожаловать в программу работы с банковскими транзакциями.\nВыберите необходимый пункт меню:
+1. Получить информацию о транзакциях из JSON-файла\n2. Получить информацию о транзакциях из CSV-файла
+3. Получить информацию о транзакциях из XLSX-файла"""
     )
-)
+    while True:
+        user_point = input("Введите номер необходимого пункта: ")
+        if user_point in ["1", "2", "3"]:
+            break
+        else:
+            print("Введите целое число от 1 до 3.")
+    all_transactions = choice_and_read(user_point)
+    filtered_by_state = choice_and_filter_by_state(all_transactions)
+    sorted_by_date = choice_sort_by_date(filtered_by_state)
+    filtered_by_currency = choice_and_filter_by_currency(sorted_by_date)
+    filtered_by_description = choice_and_filter_by_description(filtered_by_currency)
+    print("Распечатываю итоговый список транзакций...")
+    print(f"Всего банковских операций в выборке: {len(filtered_by_description)}")
 
-# список словарей для generators.py
-transactions = [
-    {
-        "id": 939719570,
-        "state": "EXECUTED",
-        "date": "2018-06-30T02:08:58.425572",
-        "operationAmount": {"amount": "9824.07", "currency": {"name": "USD", "code": "USD"}},
-        "description": "Перевод организации",
-        "from": "Счет 75106830613657916952",
-        "to": "Счет 11776614605963066702",
-    },
-    {
-        "id": 142264268,
-        "state": "EXECUTED",
-        "date": "2019-04-04T23:20:05.206878",
-        "operationAmount": {"amount": "79114.93", "currency": {"name": "USD", "code": "USD"}},
-        "description": "Перевод со счета на счет",
-        "from": "Счет 19708645243227258542",
-        "to": "Счет 75651667383060284188",
-    },
-    {
-        "id": 873106923,
-        "state": "EXECUTED",
-        "date": "2019-03-23T01:09:46.296404",
-        "operationAmount": {"amount": "43318.34", "currency": {"name": "руб.", "code": "RUB"}},
-        "description": "Перевод со счета на счет",
-        "from": "Счет 44812258784861134719",
-        "to": "Счет 74489636417521191160",
-    },
-    {
-        "id": 895315941,
-        "state": "EXECUTED",
-        "date": "2018-08-19T04:27:37.904916",
-        "operationAmount": {"amount": "56883.54", "currency": {"name": "USD", "code": "USD"}},
-        "description": "Перевод с карты на карту",
-        "from": "Visa Classic 6831982476737658",
-        "to": "Visa Platinum 8990922113665229",
-    },
-    {
-        "id": 594226727,
-        "state": "CANCELED",
-        "date": "2018-09-12T21:27:25.241689",
-        "operationAmount": {"amount": "67314.70", "currency": {"name": "руб.", "code": "RUB"}},
-        "description": "Перевод организации",
-        "from": "Visa Platinum 1246377376343588",
-        "to": "Счет 14211924144426031657",
-    },
-]
-
-usd_transactions = filter_by_currency(transactions, "USD")
-for i in range(3):
-    print(next(usd_transactions)["id"])
-
-descriptions = transaction_descriptions(transactions)
-for i in range(5):
-    print(next(descriptions))
-
-for car_number in card_number_generator(start=2, stop=12):
-    print(car_number)
-
-
-@log(filename="mylog.txt")
-def my_function(x: int, y: int) -> int:
-    """Функция вызова декоратора с файлом сохранения mylog.txt"""
-    return x + y
-
-
-my_function(1, 2)
-
-
-@log()
-def my_function_1(x: int, y: int) -> int:
-    """Функция вызова декоратора без файла сохранения и вывод в консоль"""
-    return x + y
-
-
-my_function(1, 2)
-
-
-# @log(filename="mylog.txt")
-# def my_function_error(x: int, y: int) -> float:
-#    """Функция вызова декоратора с ошибкой с файлом сохранения mylog.txt"""
-#    return x / y
-
-
-# my_function_error(3, 0)
-
-current_dir = os.path.dirname(os.path.abspath(__file__))
-file_path = os.path.join(current_dir, "data", "operations.json")
-transactions_1 = load_transactions(file_path)
-
-
-for transaction in transactions_1:
-    rub_amount = currency_conversion(transaction)
-    print(f"Transaction amount in RUB: {rub_amount}")
+    for transaction in filtered_by_description:
+        print(f"{get_new_data(transaction['date'])} {transaction['description']}")
+        if not transaction.get("from"):
+            print(f"{mask_account_card(transaction['to'])}")
+        else:
+            print(f"{mask_account_card(transaction['from'])} -> {mask_account_card(transaction['to'])}")
+        print(f"Сумма: {transaction['amount']} {transaction['currency_name']}")
+        print()
