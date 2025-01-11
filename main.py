@@ -5,7 +5,7 @@ from src.generators import filter_by_currency
 from src.processing import filter_by_state, filter_by_user_word, sort_by_date
 from src.reading_file import get_reading_csv, get_reading_exel
 from src.utils import load_transactions
-from src.widget import get_new_data, mask_account_card
+from src.widget import get_date, mask_account_card
 
 PATH_TO_ROOT = Path(__file__).parent
 PATH_TO_DATA = Path(PATH_TO_ROOT, "data")
@@ -130,7 +130,7 @@ def main() -> None:
     print(f"Всего банковских операций в выборке: {len(filtered_by_description)}")
 
     for transaction in filtered_by_description:
-        print(f"{get_new_data(transaction['date'])} {transaction['description']}")
+        print(f"{get_date(transaction['date'])} {transaction['description']}")
         if not transaction.get("from"):
             print(f"{mask_account_card(transaction['to'])}")
         else:
